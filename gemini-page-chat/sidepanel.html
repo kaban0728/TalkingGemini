@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <style>
-    /* 画面全体をFlexboxにして高さを自動調整する設定 */
+    /* 画面全体設定 */
     html, body { 
       height: 100%; 
       margin: 0; 
@@ -16,12 +16,12 @@
       display: flex;
       flex-direction: column;
       padding: 10px;
-      width: 100%; /* 固定幅を削除 */
+      width: 100%;
     }
 
     h3 { margin: 0 0 10px 0; }
 
-    /* ツールエリア（モデル選択と保存ボタン） */
+    /* ツールエリア */
     #tools-section {
       display: flex;
       justify-content: space-between;
@@ -34,28 +34,29 @@
     label { font-size: 0.8em; color: #666; display: block; margin-bottom: 4px;}
     select { width: 100%; box-sizing: border-box; padding: 4px; }
 
-    /* エクスポートボタンのデザイン */
+    /* エクスポートボタンのデザイン（アイコン用に調整） */
     #export-btn {
       background-color: #4CAF50;
       color: white;
       border: none;
-      padding: 6px 10px;
+      padding: 6px 12px; /* アイコンが見やすいように調整 */
       cursor: pointer;
-      font-size: 0.8em;
+      font-size: 1.2em;  /* アイコンサイズ */
       border-radius: 4px;
       height: fit-content;
+      line-height: 1;
     }
     #export-btn:hover { background-color: #45a049; }
     
-    /* チャット履歴エリア：残りの高さを全て使う */
+    /* チャット履歴エリア */
     #chat-history { 
-      flex: 1;             /* ここが重要：可変高さ */
+      flex: 1;
       overflow-y: scroll; 
       border: 1px solid #ccc; 
       margin-bottom: 10px; 
       padding: 5px; 
       background-color: #fff;
-      min-height: 200px;   /* 最小の高さ */
+      min-height: 200px;
     }
     
     .message { margin-bottom: 8px; padding: 8px; border-radius: 6px; font-size: 0.9em; line-height: 1.4; }
@@ -90,7 +91,7 @@
         <option value="pro">Pro (Gemini 2.5 Pro)</option>
       </select>
     </div>
-    <button id="export-btn">会話を保存</button>
+    <button id="export-btn" title="会話を保存">💾</button>
   </div>
 
   <div id="chat-history"></div>

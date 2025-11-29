@@ -2,20 +2,20 @@ document.addEventListener('DOMContentLoaded', () => {
   const historyDiv = document.getElementById('chat-history');
   const inputField = document.getElementById('user-input');
   const sendBtn = document.getElementById('send-btn');
-  const exportBtn = document.getElementById('export-btn'); // 追加
+  const exportBtn = document.getElementById('export-btn');
   const modelSelect = document.getElementById('model-select');
 
-  // エラーチェック（変更なし）
   if (typeof GEMINI_API_KEY === 'undefined' || GEMINI_API_KEY.includes("貼り付けて")) {
     appendMessage("Error", "設定エラー: config.js が正しく読み込まれていません。<br>APIキーを設定してください。");
   }
 
   let pageContext = "";
+  let currentPageUrl = ""; // URLを保存する変数を追加
 
-  // ページ読み込み処理（変更なし）
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (chrome.runtime.lastError || !tabs || tabs.length === 0) return;
     const tabId = tabs[0].id;
+    currentPageUrl = tabs[0].url; // URLを取得
     
     if (tabs[0].url.startsWith("chrome://") || tabs[0].url.startsWith("edge://")) {
       appendMessage("System", "このページでは使用できません。");
@@ -36,19 +36,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // ★追加機能1: Ctrl+Enter (またはCommand+Enter) で送信
+  // Ctrl+Enter で送信
   inputField.addEventListener('keydown', (e) => {
-    // 日本語変換確定のEnterと区別するため isComposing をチェック推奨ですが、
-    // Ctrlキー同時押しの場合は変換確定と被りにくいためシンプルに実装します
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault(); // 改行などが挿入されるのを防ぐ
-      sendBtn.click();    // 送信ボタンのクリックイベントを発火
+      e.preventDefault();
+      sendBtn.click();
     }
   });
 
-  // ★追加機能2: 会話のエクスポート
+  // ★更新: 会話のエクスポート処理
   exportBtn.addEventListener('click', () => {
-    let exportText = "# Gemini Page Chat History\n\n";
     const messages = historyDiv.querySelectorAll('.message');
     
     if (messages.length === 0) {
@@ -56,13 +53,18 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    const now = new Date();
+    // 日時フォーマット (YYYY/MM/DD HH:MM:SS)
+    const dateStr = now.toLocaleString('ja-JP');
+
+    // ファイル内容のヘッダー作成
+    let exportText = `# Gemini Page Chat History\n\n`;
+    exportText += `- **Date**: ${dateStr}\n`;
+    exportText += `- **URL**: ${currentPageUrl}\n\n`;
+    exportText += `---\n\n`;
+
     messages.forEach(msgDiv => {
-      // HTMLからテキストを簡易抽出
-      // innerTextを使うと見た目通りに改行が取得できる
       let text = msgDiv.innerText;
-      
-      // 送信者（You/Gemini/System）と本文を整形
-      // CSSで表示されている "You:" などの部分も含めて取得されます
       exportText += `${text}\n\n---\n\n`;
     });
 
@@ -70,9 +72,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     
-    // 日時付きファイル名
-    const now = new Date();
-    const filename = `chat_export_${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}_${now.getHours()}${now.getMinutes()}.md`;
+    // ★ファイル名: gemini_pagechat_yyyymmdd_hhmm.md
+    const yyyy = now.getFullYear();
+    const mm = (now.getMonth() + 1).toString().padStart(2, '0');
+    const dd = now.getDate().toString().padStart(2, '0');
+    const hh = now.getHours().toString().padStart(2, '0');
+    const min = now.getMinutes().toString().padStart(2, '0');
+    
+    const filename = `gemini_pagechat_${yyyy}${mm}${dd}_${hh}${min}.md`;
 
     a.href = url;
     a.download = filename;
@@ -82,7 +89,6 @@ document.addEventListener('DOMContentLoaded', () => {
     URL.revokeObjectURL(url);
   });
 
-  // 送信ボタンクリック処理（既存ロジック）
   sendBtn.addEventListener('click', async () => {
     const userMessage = inputField.value;
     const selectedModel = modelSelect.value;
@@ -123,7 +129,6 @@ document.addEventListener('DOMContentLoaded', () => {
        } else {
          displayText = text.replace(/\n/g, '<br>');
        }
-       // innerHTMLで見出しをつける
        div.innerHTML = `<strong>${sender}:</strong><br>${displayText}`;
     }
 
@@ -137,7 +142,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (el) el.remove();
   }
 
-  // Markdownパーサー（変更なし）
   function parseMarkdown(text) {
     let html = text;
     html = html.replace(/```([\s\S]*?)```/g, '<pre style="background:#eee;padding:5px;border-radius:4px;"><code>$1</code></pre>');
@@ -150,7 +154,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return html;
   }
 
-  // API呼び出し（変更なし）
   async function callGeminiAPI(key, prompt, context, modelType) {
     let modelName = 'gemini-2.5-flash'; 
     if (modelType === 'pro') {
